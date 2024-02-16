@@ -11,5 +11,7 @@ provider:
     runtime: python3.9
 
 functions:
-    hello:
+    hello1:
         handler: handler.hello
+        events:
+            - httpApi: "GET /hello1"

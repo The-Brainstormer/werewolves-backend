@@ -1,6 +1,9 @@
 {
-  "devDependencies": {
-    "serverless-offline": "^13.3.3",
-    "serverless-python-requirements": "^6.0.1"
-  }
+    "devDependencies": {
+        "serverless-offline": "^13.3.3",
+        "serverless-python-requirements": "^6.0.1"
+    },
+    "scripts": {
+        "start": "sls offline start --reloadHandler"
+    }
 }
