@@ -11,7 +11,11 @@ provider:
     runtime: python3.9
 
 functions:
-    hello1:
-        handler: handler.hello
+    startGame:
+        handler: handler.start
         events:
-            - httpApi: "GET /hello1"
+            - httpApi: "GET /start"
+    endGame:
+        handler: handler.end
+        events:
+            - httpApi: "GET /end"
