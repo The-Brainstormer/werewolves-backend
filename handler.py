@@ -155,13 +155,12 @@ def _let_witch_save() -> bool:
     save_werewolf_victim = random.choice(options)
     if save_werewolf_victim:
         game.set_witch_save_potion_used()
+    else:
+        print("Witch chose not to save the werewolf victim tonight.")
 
     return save_werewolf_victim
 
 def _let_witch_kill() -> Optional[Player]:
-    print("\n")
-    # todo - cant kill the same player you're saving
-
     global game
     if game is None:
         raise ValueError("Game has not started yet.")
@@ -175,7 +174,13 @@ def _let_witch_kill() -> Optional[Player]:
         print("Witch has already used the kill potion")
         return None
     
-    players = game.get_players_alive()
-    killed_player = random.choice(players)
-    game.set_witch_kill_potion_used(killed_player)
-    return killed_player
+    options = [True, False]
+    use_kill_potion = random.choice(options)
+    if use_kill_potion:
+        players = game.get_players_alive()
+        killed_player = random.choice(players)
+        game.set_witch_kill_potion_used(killed_player)
+        return killed_player
+    else:
+        print("Witch chose not to kill a player tonight.")
+        return None

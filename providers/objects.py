@@ -290,11 +290,11 @@ class Game(object):
         should_kill_werewolf_victim = True
         should_kill_witch_victim = True
 
-        if (did_witch_save_werewolf_victim) \
-            or (bodyguard_saved_player is not None and bodyguard_saved_player == werewolf_victim):
+        if (werewolf_victim and (did_witch_save_werewolf_victim) \
+            or (bodyguard_saved_player is not None and bodyguard_saved_player == werewolf_victim)):
             should_kill_werewolf_victim = False
         
-        if (bodyguard_saved_player is not None and bodyguard_saved_player == witch_killed_player):
+        if (witch_killed_player and bodyguard_saved_player and bodyguard_saved_player == witch_killed_player):
             should_kill_witch_victim = False
         
         if werewolf_victim and should_kill_werewolf_victim:
