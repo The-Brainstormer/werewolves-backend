@@ -64,6 +64,11 @@ class Player(object):
         
         return can_take_action
     
+    def __str__(self) -> str:
+        return f'{self.name} ({self.role})'
+    
+    def toJson(self):
+        return f'{self.name} ({self.role})'
     
 class Werewolf(Role):
     def __init__(self):
@@ -92,7 +97,6 @@ class Witch(Villager):
         self.can_kill = True
         self.can_save = True
     
-
 class Vote(object):
     def __init__(self, player: Player, votes: int):
         self.player = player
@@ -147,7 +151,6 @@ class Game(object):
         self.night = 0
         self.start_time = None
         self.end_time = None
-        self.winner_role: Optional[Type[Role]] = None
         self.winners: List[Player] = []
         self.werewolf_votes: Dict[Player, Vote] = {}
         self.werewolf_votes_history: List[Dict[Player, Vote]] = []
@@ -164,11 +167,8 @@ class Game(object):
         logger.info(f"Day: {self.day}. {len(self.players)} players introduced  \n")
         
     def end(self):
-        if self.is_over():
-            logger.info(f'{self.winner_role} win. Game ends')
-        else:
-            logger.info('Game ends. No winner')
         self.end_time = datetime.now()
+        logger.info(f'Game ends at {self.end_time}')
         
     def new_day(self):
         self.day += 1
@@ -200,19 +200,17 @@ class Game(object):
     def is_werewolf(self, player: Player) -> bool:
         return isinstance(player.role, Werewolf)
 
-    def is_over(self):
+    def is_game_over(self):
         # get players that are instances of Werewolf
         werewolves = self.get_werewolves()
         villagers = self.get_villagers()  
         
         if len(werewolves) == 0:
-            self.winner_role = Villager
             self.winners = villagers
             logger.info('Villagers win. All werewolves are dead.')
             return True
         
         if len(werewolves) >= len(villagers):
-            self.winner_role = Werewolf
             self.winners = werewolves
             logger.info('Werewolves win. They outnumber the villagers.')
             return True
@@ -308,7 +306,7 @@ class Game(object):
         return self.witch_save_potion_used
     
     def process_and_end_night(self, night_actions: NightActions):
-        logger.info("\n")
+        logger.info("")
         # process night results
         # identify who needs to be killed, if seer results should be announced, etc 
         # then append result to history
@@ -360,10 +358,14 @@ class Game(object):
                 logger.info(f'{player} died')
         
         # announce seer results
-        if last_night_results.should_announce_seer_results():
-            if last_night_results.did_seer_find_werewolf:
-                logger.info('Seer found a werewolf last night')
-            else:
-                logger.info('Seer did not find a werewolf last night')
+        seer = self.get_seer()
+        if seer is None:
+            logger.info('No seer in the game')
         else:
-            logger.info('Seer results are not announced')
+            if last_night_results.should_announce_seer_results():
+                if last_night_results.did_seer_find_werewolf:
+                    logger.info('Seer found a werewolf last night')
+                else:
+                    logger.info('Seer did not find a werewolf last night')
+            else:
+                logger.info("Seer results won't be announced")

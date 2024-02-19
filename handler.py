@@ -12,8 +12,14 @@ def play(event, context):
     players = _init_players()
     game = Game(players)
     game.start()
-    night_actions: NightActions = game.new_night()
+    while not game.is_game_over():
+        _play_round(game)
 
+    game.end()
+    return respond(game)
+
+def _play_round(game: Game):
+    night_actions: NightActions = game.new_night()
     # night moves
     # 1 -  werewolves kill a player
     night_actions.werewolf_victim = _collect_werewolf_votes().player
@@ -33,13 +39,17 @@ def play(event, context):
 
     game.new_day()
     game.announce_last_night_results()
+    if game.is_game_over():
+        return
     
-    logger.info("")
-    game.end()
+    # day moves
+    logger.info("Day moves to be implemented")
+
+
+def respond(game):
     body = {
-        "winners": game.winners,
-        "winner_role": game.winner_role,
-    }
+            "winners": [winner.toJson() for winner in game.winners],
+        }
     return {"statusCode": 200, "body": json.dumps(body)}
 
 def _init_players()->List[Player]:
