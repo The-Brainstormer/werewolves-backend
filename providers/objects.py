@@ -1,6 +1,6 @@
 from datetime import datetime
 from math import log
-from typing import List, Optional, Type
+from typing import Dict, List, Optional, Type
 from enum import Enum
 
 
@@ -47,6 +47,12 @@ class Player(object):
     def __repr__(self):
         return f"{self.name} ({self.role})"
     
+    def __eq__(self, __value: 'Player') -> bool:
+        return self.id == __value.id
+    
+    def __hash__(self) -> int:
+        return hash(self.id)
+
     def take_action(self, player_action: PlayerAction):
         print(f'{self.name} ({self.role}) moves to {player_action}')
         can_take_action = player_action.action in self.allowed_actions
@@ -87,18 +93,27 @@ class Witch(Villager):
         self.can_save = True
     
 
+class Vote(object):
+    def __init__(self, player: Player, votes: int):
+        self.player = player
+        self.votes = votes
+
+    def __repr__(self):
+        return f'{self.player} ({self.votes})'
 
 class Game(object):
     def __init__(self, players: List[Player]):
-        self.players = players
-        self.players_alive = players
-        self.players_dead = []
+        self.players: List[Player] = players
+        self.players_alive: List[Player] = players
+        self.players_dead: List[Player] = []
         self.day = 0
         self.night = 0
         self.start_time = None
         self.end_time = None
         self.winner_role: Optional[Type[Role]] = None
         self.winners: List[Player] = []
+        self.werewolf_votes: Dict[Player, Vote] = {}
+        self.werewolf_votes_history: List[Dict[Player, Vote]] = []
         
     def start(self):
         self.day = 1
@@ -119,11 +134,17 @@ class Game(object):
     def next_night(self):
         self.night += 1
         print(f"\nNight: {self.night}. Players alive: {self.players_alive} \n")
-        
+    
+    def get_villagers(self):
+        return [p for p in self.players_alive if isinstance(p.role, Villager)]
+    
+    def get_werewolves(self):
+        return [p for p in self.players_alive if isinstance(p.role, Werewolf)]
+
     def is_over(self):
-        # get players that are instaces of Werewolf
-        werewolves = [p for p in self.players_alive if isinstance(p.role, Werewolf)]
-        villagers = [p for p in self.players_alive if isinstance(p.role, Werewolf)]     
+        # get players that are instances of Werewolf
+        werewolves = self.get_werewolves()
+        villagers = self.get_villagers()  
         
         if len(werewolves) == 0:
             self.winner_role = Villager
@@ -139,4 +160,65 @@ class Game(object):
         
         return False
     
+    def start_new_werewolves_vote(self):
+        self.werewolf_votes = {}
+        return self.werewolf_votes
     
+    def end_werewolves_vote(self):
+        self.werewolf_votes_history.append(self.werewolf_votes)
+        return self.werewolf_votes
+
+    def add_werewolf_vote(self, werewolf_player: Player, victim_player: Player):
+        if not (werewolf_player in self.players_alive and isinstance(werewolf_player.role, Werewolf)):
+            print(f'{werewolf_player} is not a werewolf or is dead')
+            return False
+
+        if not (victim_player in self.players_alive):
+            print(f'{victim_player} is dead')
+            return False
+        
+        print(f'{werewolf_player} votes to kill {victim_player}')
+        if victim_player in self.werewolf_votes:
+            self.werewolf_votes[victim_player].votes += 1
+        else:
+            self.werewolf_votes[victim_player] = Vote(victim_player, 1)
+
+        return self.werewolf_votes
+    
+    def remove_werevolves_vote(self, werewolf_player: Player, victim_player: Player):
+        if not (werewolf_player in self.players_alive and isinstance(werewolf_player.role, Werewolf)):
+            print(f'{werewolf_player} is not a werewolf or is dead')
+            return False
+        
+        # remove vote
+        if victim_player in self.werewolf_votes:
+            print(f'{werewolf_player} has removed vote for {victim_player}')
+            self.werewolf_votes[victim_player].votes -= 1
+            if self.werewolf_votes[victim_player].votes <= 0:
+                del self.werewolf_votes[victim_player]
+        else:
+            print(f'{werewolf_player} has not voted for {victim_player}')
+
+        return self.werewolf_votes    
+    
+    def get_highest_werewolves_votes(self)-> List[Vote]:
+        if len(self.werewolf_votes) == 0:
+            return []
+        
+        highest_vote = max([vote.votes for vote in self.werewolf_votes.values()])
+        return [vote for player, vote in self.werewolf_votes.items() if vote.votes == highest_vote]
+    
+    def get_werewolves_votes(self):
+        return self.werewolf_votes
+    
+    def get_werewolves_votes_history(self):
+        return self.werewolf_votes_history
+
+    def kill_player(self, player: Player, reason: str = '') -> List[Player]:
+        if player in self.players_alive:
+            print(f'{player} is killed. Reason: {reason}')
+            self.players_alive.remove(player)
+            self.players_dead.append(player)
+            player.is_alive = False
+        
+        return self.players_alive
