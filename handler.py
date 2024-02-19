@@ -1,7 +1,6 @@
 import json
 from math import e
 import random
-import re
 from typing import Dict, List, Optional
 from providers.objects import Game, NightResult, Player, Vote, Werewolf, Villager, Seer, Bodyguard, Witch
 
@@ -26,7 +25,7 @@ def play(event, context):
     # 3 - seer investigates a player
     night_result.did_seer_find_werewolf = _let_seer_investigate()
     # 4 - witch saves a player
-    night_result.witch_saved_player = _let_witch_save()
+    night_result.did_witch_save_werewolf_victim = _let_witch_save()
     # 5 - witch kills a player
     night_result.witch_killed_player = _let_witch_kill()
 
@@ -114,8 +113,6 @@ def _let_seer_investigate() -> bool:
         print(f"{investigated_player} is not a werewolf")
         return False
     
-    return False
-
 def _let_bodyguard_save() -> Optional[Player]:
     print("\n")
 
@@ -139,7 +136,7 @@ def _let_bodyguard_save() -> Optional[Player]:
     print("Bodyguard saves", saved_player)
     return saved_player
 
-def _let_witch_save() -> Optional[Player]:
+def _let_witch_save() -> bool:
     print("\n")
 
     global game
@@ -149,16 +146,18 @@ def _let_witch_save() -> Optional[Player]:
     witch = game.get_witch()
     if witch is None or not witch.is_alive:
         print("Witch is dead. No saving")
-        return None
+        return False
     
     if game.is_witch_save_potion_used():
         print("Witch has already used the save potion")
-        return None
+        return False
     
-    players = game.get_players_alive()
-    saved_player = random.choice(players)
-    game.set_witch_save_potion_used(saved_player)
-    return saved_player
+    options = [True, False]
+    save_werewolf_victim = random.choice(options)
+    if save_werewolf_victim:
+        game.set_witch_save_potion_used()
+
+    return save_werewolf_victim
 
 def _let_witch_kill() -> Optional[Player]:
     print("\n")

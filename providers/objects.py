@@ -103,7 +103,7 @@ class Vote(object):
 class NightResult(object):
     werewolf_victim: Optional[Player] = None
     did_seer_find_werewolf: bool = False
-    witch_saved_player: Optional[Player] = None
+    did_witch_save_werewolf_victim: bool = False
     witch_killed_player: Optional[Player] = None
     bodyguard_saved_player: Optional[Player] = None
 
@@ -267,12 +267,12 @@ class Game(object):
     def is_witch_kill_potion_used(self) -> bool:
         return self.witch_kill_potion_used
     
-    def set_witch_save_potion_used(self, player: Player) -> Optional[Player]:
+    def set_witch_save_potion_used(self) -> Optional[Player]:
         if self.witch_save_potion_used:
             print('Witch save potion already used')
             return None
         self.witch_save_potion_used = True
-        print(f'Witch save potion used on {player}')
+        print(f'Witch save potion used on werewolf victim')
     
     def is_witch_save_potion_used(self) -> bool:
         return self.witch_save_potion_used
@@ -283,19 +283,18 @@ class Game(object):
         # then append result to history
         werewolf_victim: Optional[Player] = night_result.werewolf_victim
         witch_killed_player: Optional[Player] = night_result.witch_killed_player
-        witch_saved_player: Optional[Player] = night_result.witch_saved_player
+        did_witch_save_werewolf_victim = night_result.did_witch_save_werewolf_victim
         did_seer_find_werewolf: bool = night_result.did_seer_find_werewolf
         bodyguard_saved_player: Optional[Player] = night_result.bodyguard_saved_player
 
         should_kill_werewolf_victim = True
         should_kill_witch_victim = True
 
-        if (witch_saved_player is not None and witch_saved_player == werewolf_victim) \
+        if (did_witch_save_werewolf_victim) \
             or (bodyguard_saved_player is not None and bodyguard_saved_player == werewolf_victim):
             should_kill_werewolf_victim = False
         
-        if (witch_saved_player is not None and witch_saved_player == witch_killed_player) \
-            or (bodyguard_saved_player is not None and bodyguard_saved_player == witch_killed_player):
+        if (bodyguard_saved_player is not None and bodyguard_saved_player == witch_killed_player):
             should_kill_witch_victim = False
         
         if werewolf_victim and should_kill_werewolf_victim:
