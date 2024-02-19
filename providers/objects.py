@@ -3,7 +3,6 @@ from math import log
 from typing import Dict, List, Optional, Type
 from enum import Enum
 
-
 class RoleAction(Enum):
     Suspect = "Suspect"
     Kill = "Kill"
@@ -100,6 +99,14 @@ class Vote(object):
 
     def __repr__(self):
         return f'{self.player} ({self.votes})'
+    
+class NightResult(object):
+    werewolf_victim: Optional[Player] = None
+    did_seer_find_werewolf: bool = False
+    witch_saved_player: Optional[Player] = None
+    witch_killed_player: Optional[Player] = None
+    bodyguard_saved_player: Optional[Player] = None
+
 
 class Game(object):
     def __init__(self, players: List[Player]):
@@ -114,6 +121,9 @@ class Game(object):
         self.winners: List[Player] = []
         self.werewolf_votes: Dict[Player, Vote] = {}
         self.werewolf_votes_history: List[Dict[Player, Vote]] = []
+        self.night_results_history: List[NightResult] = []
+        self.witch_kill_potion_used = False
+        self.witch_save_potion_used = False
         
     def start(self):
         self.day = 1
@@ -124,22 +134,41 @@ class Game(object):
         print(f"Day: {self.day}. Players introduced: {len(self.players)} \n")
         
     def end(self):
-        print('Game ends')
+        if self.is_over():
+            print(f'{self.winner_role} win. Game ends')
+        else:
+            print('Game ends. No winner')
         self.end_time = datetime.now()
         
     def next_day(self):
         self.day += 1
         print(f"\nDay: {self.day}. Players alive: {self.players_alive} \n")
         
-    def next_night(self):
+    def new_night(self):
         self.night += 1
         print(f"\nNight: {self.night}. Players alive: {self.players_alive} \n")
+        return NightResult()
     
-    def get_villagers(self):
+    def get_villagers(self) -> List[Player]:
         return [p for p in self.players_alive if isinstance(p.role, Villager)]
     
-    def get_werewolves(self):
+    def get_werewolves(self) -> List[Player]:
         return [p for p in self.players_alive if isinstance(p.role, Werewolf)]
+    
+    def get_seer(self) -> Optional[Player]:
+        return next(iter([p for p in self.players_alive if isinstance(p.role, Seer)]), None)
+
+    def get_bodyguard(self) -> Optional[Player]:
+        return next(iter([p for p in self.players_alive if isinstance(p.role, Bodyguard)]), None)
+    
+    def get_witch(self) -> Optional[Player]:
+        return next(iter([p for p in self.players_alive if isinstance(p.role, Witch)]), None)
+    
+    def get_players_alive(self) -> List[Player]:
+        return self.players_alive
+    
+    def is_werewolf(self, player: Player) -> bool:
+        return isinstance(player.role, Werewolf)
 
     def is_over(self):
         # get players that are instances of Werewolf
@@ -222,3 +251,60 @@ class Game(object):
             player.is_alive = False
         
         return self.players_alive
+
+    def get_last_bodyguard_saved_player(self) -> Optional[Player]:
+        if len(self.night_results_history) == 0:
+            return None
+        return self.night_results_history[-1].bodyguard_saved_player
+    
+    def set_witch_kill_potion_used(self, player: Player) -> Optional[Player]:
+        if self.witch_kill_potion_used:
+            print('Witch kill potion already used')
+            return None
+        self.witch_kill_potion_used = True
+        print(f'Witch kill potion used on {player}')
+    
+    def is_witch_kill_potion_used(self) -> bool:
+        return self.witch_kill_potion_used
+    
+    def set_witch_save_potion_used(self, player: Player) -> Optional[Player]:
+        if self.witch_save_potion_used:
+            print('Witch save potion already used')
+            return None
+        self.witch_save_potion_used = True
+        print(f'Witch save potion used on {player}')
+    
+    def is_witch_save_potion_used(self) -> bool:
+        return self.witch_save_potion_used
+    
+    def process_and_end_night(self, night_result: NightResult):
+        # process night results
+        # identify who needs to be killed, if seer results should be announced, etc 
+        # then append result to history
+        werewolf_victim: Optional[Player] = night_result.werewolf_victim
+        witch_killed_player: Optional[Player] = night_result.witch_killed_player
+        witch_saved_player: Optional[Player] = night_result.witch_saved_player
+        did_seer_find_werewolf: bool = night_result.did_seer_find_werewolf
+        bodyguard_saved_player: Optional[Player] = night_result.bodyguard_saved_player
+
+        should_kill_werewolf_victim = True
+        should_kill_witch_victim = True
+
+        if (witch_saved_player is not None and witch_saved_player == werewolf_victim) \
+            or (bodyguard_saved_player is not None and bodyguard_saved_player == werewolf_victim):
+            should_kill_werewolf_victim = False
+        
+        if (witch_saved_player is not None and witch_saved_player == witch_killed_player) \
+            or (bodyguard_saved_player is not None and bodyguard_saved_player == witch_killed_player):
+            should_kill_witch_victim = False
+        
+        if werewolf_victim and should_kill_werewolf_victim:
+            self.kill_player(werewolf_victim, 'Werewolf victim')
+
+        if witch_killed_player and should_kill_witch_victim:
+            self.kill_player(witch_killed_player, 'Witch victim')
+
+
+        self.night_results_history.append(night_result)
+        return self.night_results_history
+    

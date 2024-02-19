@@ -1,41 +1,41 @@
 import json
+from math import e
 import random
+import re
 from typing import Dict, List, Optional
-from providers.objects import Game, Player, Vote, Werewolf, Villager, Seer, Bodyguard, Witch
+from providers.objects import Game, NightResult, Player, Vote, Werewolf, Villager, Seer, Bodyguard, Witch
 
 game: Optional[Game] = None
 
-def start(event, context):
+def play(event, context):
     global game 
 
     players = _init_players()
     game = Game(players)
     game.start()
-    game.next_night()
+    night_result: NightResult = game.new_night()
 
     # night moves
     # 1 -  werewolves kill a player
-    highest_vote = _collect_werewolf_votes()
-    victim = highest_vote.player
-    game.kill_player(victim, "Killed by Werewolves")
+    night_result.werewolf_victim = _collect_werewolf_votes().player
+    # we cant kill the player if they're saved by the bodyguard or witch
+    # game.kill_player(werewolf_victim, "Killed by Werewolves")
 
+    # 2 - bodyguard saves a player
+    night_result.bodyguard_saved_player = _let_bodyguard_save()
+    # 3 - seer investigates a player
+    night_result.did_seer_find_werewolf = _let_seer_investigate()
+    # 4 - witch saves a player
+    night_result.witch_saved_player = _let_witch_save()
+    # 5 - witch kills a player
+    night_result.witch_killed_player = _let_witch_kill()
 
-    # # seer investigates a player
-    # player_5.take_action(PlayerAction(RoleAction.Investigate, player_1))
-
-    # # bodyguard saves a player
-    # player_10.take_action(PlayerAction(RoleAction.
-    # Save, player_6))
-
-    # # witch saves a player
-    # player_11.take_action(PlayerAction(RoleAction.Save, player_9))
-
-    # # witch kills a player
-    # player_11.take_action(PlayerAction(RoleAction.Kill, player_7))
+    game.process_and_end_night(night_result)
 
     # game.next_day()
     
 
+    game.end()
     body = {
         "winners": game.winners,
         "winner_role": game.winner_role,
@@ -62,6 +62,9 @@ def _init_players()->List[Player]:
 
 
 def _collect_werewolf_votes()->Vote:
+    print("\n")
+    # todo, when there is a tie, werewolves need to vote again but only the ones who tied
+
     global game
     if game is None:
         raise ValueError("Game has not started yet.")
@@ -75,7 +78,7 @@ def _collect_werewolf_votes()->Vote:
         victim = random.choice(villagers)
         game.add_werewolf_vote(werewolf_player=werewolf, victim_player=victim)
 
-    print(f"Current Votes", game.werewolf_votes)
+    print(f"Current Votes", [vote for player, vote in game.werewolf_votes.items()])
     highest_votes = game.get_highest_werewolves_votes()
     if len(highest_votes) > 1:
         print("There is a tie")
@@ -88,16 +91,93 @@ def _collect_werewolf_votes()->Vote:
         game.end_werewolves_vote()
         return highest_vote
 
+def _let_seer_investigate() -> bool:
+    print("\n")
 
-def end(event, context):
+    global game
     if game is None:
-        body = {
-            "message": "Game has not started yet.",
-        }
-        return {"statusCode": 400, "body": json.dumps(body)}
+        raise ValueError("Game has not started yet.")
     
-    game.end()
-    body = {
-        "message": "Game over!",
-    }
-    return {"statusCode": 200, "body": json.dumps(body)}
+    seer = game.get_seer()
+    if seer is None or not seer.is_alive:
+        print("Seer is dead. No investigation")
+        return False
+    
+    players = game.get_players_alive()
+    investigated_player = random.choice(players)
+    print("Seer investigates", investigated_player)
+    is_werewolf = game.is_werewolf(investigated_player)
+    if is_werewolf:
+        print(f"{investigated_player} is a werewolf")
+        return True
+    else:
+        print(f"{investigated_player} is not a werewolf")
+        return False
+    
+    return False
+
+def _let_bodyguard_save() -> Optional[Player]:
+    print("\n")
+
+    global game
+    if game is None:
+        raise ValueError("Game has not started yet.")
+    
+    bodyguard = game.get_bodyguard()
+    if bodyguard is None or not bodyguard.is_alive:
+        print("Bodyguard is dead. No saving")
+        return None
+    
+    last_bodyguard_saved_player = game.get_last_bodyguard_saved_player()
+    
+    players = game.get_players_alive()
+    saved_player = random.choice(players)
+    if last_bodyguard_saved_player is not None and saved_player == last_bodyguard_saved_player:
+        print("Bodyguard can't save the same player twice in a row")
+        return _let_bodyguard_save()
+    
+    print("Bodyguard saves", saved_player)
+    return saved_player
+
+def _let_witch_save() -> Optional[Player]:
+    print("\n")
+
+    global game
+    if game is None:
+        raise ValueError("Game has not started yet.")
+    
+    witch = game.get_witch()
+    if witch is None or not witch.is_alive:
+        print("Witch is dead. No saving")
+        return None
+    
+    if game.is_witch_save_potion_used():
+        print("Witch has already used the save potion")
+        return None
+    
+    players = game.get_players_alive()
+    saved_player = random.choice(players)
+    game.set_witch_save_potion_used(saved_player)
+    return saved_player
+
+def _let_witch_kill() -> Optional[Player]:
+    print("\n")
+    # todo - cant kill the same player you're saving
+
+    global game
+    if game is None:
+        raise ValueError("Game has not started yet.")
+    
+    witch = game.get_witch()
+    if witch is None or not witch.is_alive:
+        print("Witch is dead. No killing")
+        return None
+    
+    if game.is_witch_kill_potion_used():
+        print("Witch has already used the kill potion")
+        return None
+    
+    players = game.get_players_alive()
+    killed_player = random.choice(players)
+    game.set_witch_kill_potion_used(killed_player)
+    return killed_player

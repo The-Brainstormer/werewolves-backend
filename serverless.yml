@@ -12,10 +12,6 @@ provider:
 
 functions:
     startGame:
-        handler: handler.start
+        handler: handler.play
         events:
-            - httpApi: "GET /start"
-    endGame:
-        handler: handler.end
-        events:
-            - httpApi: "GET /end"
+            - httpApi: "GET /play"
