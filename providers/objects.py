@@ -348,6 +348,22 @@ class Game(object):
         if len(self.night_results_history) == 0:
             logger.info('No night results to announce')
             return None
+        last_night_results = self.night_results_history[-1]
         logger.info('Last night results:')
+
         # announce players who died
-        night_result = self.night_results_history[-1]
+        killed_players = last_night_results.killed_players
+        if len(killed_players) == 0:
+            logger.info('No one died last night')
+        else:
+            for player in killed_players:
+                logger.info(f'{player} died')
+        
+        # announce seer results
+        if last_night_results.should_announce_seer_results():
+            if last_night_results.did_seer_find_werewolf:
+                logger.info('Seer found a werewolf last night')
+            else:
+                logger.info('Seer did not find a werewolf last night')
+        else:
+            logger.info('Seer results are not announced')

@@ -34,14 +34,13 @@ def play(event, context):
     game.new_day()
     game.announce_last_night_results()
     
-    logger.info("\n")
+    logger.info("")
     game.end()
     body = {
         "winners": game.winners,
         "winner_role": game.winner_role,
     }
     return {"statusCode": 200, "body": json.dumps(body)}
-
 
 def _init_players()->List[Player]:
     # create 11 players. 4 werewolves, 1 seer, 1 bodyguard, 1 witch, 4 villagers
@@ -60,9 +59,7 @@ def _init_players()->List[Player]:
     players = [player_1, player_2, player_3, player_4, player_5, player_6, player_7, player_8, player_9, player_10, player_11]
     return players
 
-
 def _collect_werewolf_votes()->Vote:
-    logger.info("\n")
     # todo, when there is a tie, werewolves need to vote again but only the ones who tied
 
     global game
@@ -92,7 +89,7 @@ def _collect_werewolf_votes()->Vote:
         return highest_vote
 
 def _let_seer_investigate() -> bool:
-    logger.info("\n")
+    logger.info("")
 
     global game
     if game is None:
@@ -110,7 +107,7 @@ def _let_seer_investigate() -> bool:
     return is_werewolf
        
 def _let_bodyguard_save() -> Optional[Player]:
-    logger.info("\n")
+    logger.info("")
 
     global game
     if game is None:
@@ -133,7 +130,7 @@ def _let_bodyguard_save() -> Optional[Player]:
     return saved_player
 
 def _let_witch_save() -> bool:
-    logger.info("\n")
+    logger.info("")
 
     global game
     if game is None:
