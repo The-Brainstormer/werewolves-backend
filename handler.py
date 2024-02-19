@@ -75,8 +75,6 @@ def _init_players()->List[Player]:
     return players
 
 def _collect_werewolf_votes(_villagers: List[Player] = [])->Vote:
-    # todo, when there is a tie, werewolves need to vote again but only the ones who tied
-
     global game
     if game is None:
         raise ValueError("Game has not started yet.")
