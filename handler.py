@@ -74,7 +74,7 @@ def _init_players()->List[Player]:
     players = [player_1, player_2, player_3, player_4, player_5, player_6, player_7, player_8, player_9, player_10, player_11]
     return players
 
-def _collect_werewolf_votes()->Vote:
+def _collect_werewolf_votes(_villagers: List[Player] = [])->Vote:
     # todo, when there is a tie, werewolves need to vote again but only the ones who tied
 
     global game
@@ -83,7 +83,11 @@ def _collect_werewolf_votes()->Vote:
 
     game.start_new_werewolves_vote()
 
-    villagers: List[Player] = game.get_villagers()
+    if len(_villagers) == 0:
+        villagers: List[Player] = game.get_villagers()
+    else:
+        villagers: List[Player] = _villagers
+
     werewolves: List[Player] = game.get_werewolves()
     for werewolf in werewolves:
         # pick a random villager
@@ -95,7 +99,8 @@ def _collect_werewolf_votes()->Vote:
     if len(highest_votes) > 1:
         logger.info("There is a tie")
         logger.info("Werewolves need to vote again")
-        return _collect_werewolf_votes()
+        tied_players = [vote.player for vote in highest_votes]
+        return _collect_werewolf_votes(tied_players)
     else:
         # get the player with the highest votes
         highest_vote = highest_votes[0]
@@ -194,7 +199,7 @@ def _let_witch_kill() -> Optional[Player]:
         logger.info("Witch chose not to kill a player tonight.")
         return None
 
-def _collect_village_votes()->Vote:
+def _collect_village_votes(_suspected_players: List[Player] = [])->Vote:
     # todo, when there is a tie, villagers need to vote again but only the ones who tied
 
     global game
@@ -202,15 +207,20 @@ def _collect_village_votes()->Vote:
         raise ValueError("Game has not started yet.")
 
     game.start_new_village_vote()
+    players_alive = game.get_players_alive()
 
-    players_alive: List[Player] = game.get_players_alive()
-    villagers: List[Player] = game.get_villagers()
+    if len(_suspected_players) == 0:
+        suspected_players = players_alive
+    else:
+        suspected_players = _suspected_players
+
+    suspected_villagers: List[Player] = [player for player in suspected_players if not game.is_werewolf(player)]
 
     for player in players_alive:
         if game.is_werewolf(player):
-            victim = random.choice(villagers)
+            victim = random.choice(suspected_villagers)
         else:
-            victim = random.choice(players_alive)
+            victim = random.choice(suspected_players)
         game.add_village_vote(player, victim)
 
     logger.info(f"Current Votes {[vote for player, vote in game.village_votes.items()]}")
@@ -218,7 +228,8 @@ def _collect_village_votes()->Vote:
     if len(highest_votes) > 1:
         logger.info("There is a tie")
         logger.info("Everyone need to vote again")
-        return _collect_village_votes()
+        tied_players = [vote.player for vote in highest_votes]
+        return _collect_village_votes(tied_players)
     else:
         # get the player with the highest votes
         highest_vote = highest_votes[0]
