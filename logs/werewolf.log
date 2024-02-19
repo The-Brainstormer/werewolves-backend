@@ -1,0 +1,42 @@
+Game starts at 2024-02-19 00:18:45.309888
+Day: 1. 11 players introduced  
+
+
+Night: 1. 11 players alive: [John (Werewolf), Jane (Werewolf), Tom (Werewolf), Jerry (Werewolf), Sue (Seer), Mary (Villager), Harry (Villager), Larry (Villager), Henry (Villager), Andy (Bodyguard), Vikky (Witch)] 
+
+
+
+John (Werewolf) votes to kill Mary (Villager)
+Jane (Werewolf) votes to kill Andy (Bodyguard)
+Tom (Werewolf) votes to kill Larry (Villager)
+Jerry (Werewolf) votes to kill Henry (Villager)
+Current Votes [Mary (Villager) (1), Andy (Bodyguard) (1), Larry (Villager) (1), Henry (Villager) (1)]
+There is a tie
+Werewolves need to vote again
+
+
+John (Werewolf) votes to kill Henry (Villager)
+Jane (Werewolf) votes to kill Andy (Bodyguard)
+Tom (Werewolf) votes to kill Henry (Villager)
+Jerry (Werewolf) votes to kill Vikky (Witch)
+Current Votes [Henry (Villager) (2), Andy (Bodyguard) (1), Vikky (Witch) (1)]
+Werewolves have voted to kill Henry (Villager)
+
+
+Bodyguard saves John (Werewolf)
+
+
+Seer investigates Larry (Villager)
+
+
+Witch save potion used on werewolf victim
+Witch chose not to kill a player tonight.
+
+
+
+Day: 2. 11 players alive: [John (Werewolf), Jane (Werewolf), Tom (Werewolf), Jerry (Werewolf), Sue (Seer), Mary (Villager), Harry (Villager), Larry (Villager), Henry (Villager), Andy (Bodyguard), Vikky (Witch)] 
+
+Last night results:
+
+
+Game ends. No winner

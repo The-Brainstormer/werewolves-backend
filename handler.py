@@ -1,7 +1,8 @@
 import json
 import random
+from logs.logger import logger
 from typing import List, Optional
-from providers.objects import Game, NightResult, Player, Vote, Werewolf, Villager, Seer, Bodyguard, Witch
+from providers.objects import Game, NightActions, Player, Vote, Werewolf, Villager, Seer, Bodyguard, Witch
 
 game: Optional[Game] = None
 
@@ -11,28 +12,29 @@ def play(event, context):
     players = _init_players()
     game = Game(players)
     game.start()
-    night_result: NightResult = game.new_night()
+    night_actions: NightActions = game.new_night()
 
     # night moves
     # 1 -  werewolves kill a player
-    night_result.werewolf_victim = _collect_werewolf_votes().player
+    night_actions.werewolf_victim = _collect_werewolf_votes().player
     # we cant kill the player if they're saved by the bodyguard or witch
     # game.kill_player(werewolf_victim, "Killed by Werewolves")
 
     # 2 - bodyguard saves a player
-    night_result.bodyguard_saved_player = _let_bodyguard_save()
+    night_actions.bodyguard_saved_player = _let_bodyguard_save()
     # 3 - seer investigates a player
-    night_result.did_seer_find_werewolf = _let_seer_investigate()
+    night_actions.did_seer_find_werewolf = _let_seer_investigate()
     # 4 - witch saves a player
-    night_result.did_witch_save_werewolf_victim = _let_witch_save()
+    night_actions.did_witch_save_werewolf_victim = _let_witch_save()
     # 5 - witch kills a player
-    night_result.witch_killed_player = _let_witch_kill()
+    night_actions.witch_victim = _let_witch_kill()
 
-    game.process_and_end_night(night_result)
+    game.process_and_end_night(night_actions)
 
     game.new_day()
+    game.announce_last_night_results()
     
-    print("\n")
+    logger.info("\n")
     game.end()
     body = {
         "winners": game.winners,
@@ -60,7 +62,7 @@ def _init_players()->List[Player]:
 
 
 def _collect_werewolf_votes()->Vote:
-    print("\n")
+    logger.info("\n")
     # todo, when there is a tie, werewolves need to vote again but only the ones who tied
 
     global game
@@ -76,21 +78,21 @@ def _collect_werewolf_votes()->Vote:
         victim = random.choice(villagers)
         game.add_werewolf_vote(werewolf_player=werewolf, victim_player=victim)
 
-    print(f"Current Votes", [vote for player, vote in game.werewolf_votes.items()])
+    logger.info(f"Current Votes {[vote for player, vote in game.werewolf_votes.items()]}")
     highest_votes = game.get_highest_werewolves_votes()
     if len(highest_votes) > 1:
-        print("There is a tie")
-        print("Werewolves need to vote again")
+        logger.info("There is a tie")
+        logger.info("Werewolves need to vote again")
         return _collect_werewolf_votes()
     else:
         # get the player with the highest votes
         highest_vote = highest_votes[0]
-        print("Werewolves have voted to kill", highest_vote.player)
+        logger.info(f"Werewolves have voted to kill {highest_vote.player}")
         game.end_werewolves_vote()
         return highest_vote
 
 def _let_seer_investigate() -> bool:
-    print("\n")
+    logger.info("\n")
 
     global game
     if game is None:
@@ -98,17 +100,17 @@ def _let_seer_investigate() -> bool:
     
     seer = game.get_seer()
     if seer is None or not seer.is_alive:
-        print("Seer is dead. No investigation")
+        logger.info("Seer is dead. No investigation")
         return False
     
     players = game.get_players_alive()
     investigated_player = random.choice(players)
-    print("Seer investigates", investigated_player)
+    logger.info(f"Seer investigates {investigated_player}")
     is_werewolf = game.is_werewolf(investigated_player)
     return is_werewolf
        
 def _let_bodyguard_save() -> Optional[Player]:
-    print("\n")
+    logger.info("\n")
 
     global game
     if game is None:
@@ -116,7 +118,7 @@ def _let_bodyguard_save() -> Optional[Player]:
     
     bodyguard = game.get_bodyguard()
     if bodyguard is None or not bodyguard.is_alive:
-        print("Bodyguard is dead. No saving")
+        logger.info("Bodyguard is dead. No saving")
         return None
     
     last_bodyguard_saved_player = game.get_last_bodyguard_saved_player()
@@ -124,14 +126,14 @@ def _let_bodyguard_save() -> Optional[Player]:
     players = game.get_players_alive()
     saved_player = random.choice(players)
     if last_bodyguard_saved_player is not None and saved_player == last_bodyguard_saved_player:
-        print("Bodyguard can't save the same player twice in a row")
+        logger.info("Bodyguard can't save the same player twice in a row")
         return _let_bodyguard_save()
     
-    print("Bodyguard saves", saved_player)
+    logger.info(f"Bodyguard saves {saved_player}")
     return saved_player
 
 def _let_witch_save() -> bool:
-    print("\n")
+    logger.info("\n")
 
     global game
     if game is None:
@@ -139,11 +141,11 @@ def _let_witch_save() -> bool:
     
     witch = game.get_witch()
     if witch is None or not witch.is_alive:
-        print("Witch is dead. No saving")
+        logger.info("Witch is dead. No saving")
         return False
     
     if game.is_witch_save_potion_used():
-        print("Witch has already used the save potion")
+        logger.info("Witch has already used the save potion")
         return False
     
     options = [True, False]
@@ -151,7 +153,7 @@ def _let_witch_save() -> bool:
     if save_werewolf_victim:
         game.set_witch_save_potion_used()
     else:
-        print("Witch chose not to save the werewolf victim tonight.")
+        logger.info("Witch chose not to save the werewolf victim tonight.")
 
     return save_werewolf_victim
 
@@ -162,11 +164,11 @@ def _let_witch_kill() -> Optional[Player]:
     
     witch = game.get_witch()
     if witch is None or not witch.is_alive:
-        print("Witch is dead. No killing")
+        logger.info("Witch is dead. No killing")
         return None
     
     if game.is_witch_kill_potion_used():
-        print("Witch has already used the kill potion")
+        logger.info("Witch has already used the kill potion")
         return None
     
     options = [True, False]
@@ -177,5 +179,5 @@ def _let_witch_kill() -> Optional[Player]:
         game.set_witch_kill_potion_used(killed_player)
         return killed_player
     else:
-        print("Witch chose not to kill a player tonight.")
+        logger.info("Witch chose not to kill a player tonight.")
         return None
