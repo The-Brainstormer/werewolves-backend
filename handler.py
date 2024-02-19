@@ -115,7 +115,7 @@ def _let_seer_investigate() -> bool:
         logger.info("Seer is dead. No investigation")
         return False
     
-    players = game.get_players_alive()
+    players = [player for player in game.get_players_alive() if player != seer]
     investigated_player = random.choice(players)
     logger.info(f"Seer investigates {investigated_player}")
     is_werewolf = game.is_werewolf(investigated_player)
@@ -186,7 +186,7 @@ def _let_witch_kill() -> Optional[Player]:
     options = [True, False]
     use_kill_potion = random.choice(options)
     if use_kill_potion:
-        players = game.get_players_alive()
+        players = [player for player in game.get_players_alive() if player != witch]
         killed_player = random.choice(players)
         game.set_witch_kill_potion_used(killed_player)
         return killed_player
