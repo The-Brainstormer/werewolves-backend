@@ -142,6 +142,25 @@ class NightResults(NightActions):
     def __repr__(self):
         return json.dumps(self.__dict__)
 
+class DayActions(object):
+    village_victim: Optional[Player] = None
+
+class DayResults(DayActions):
+    killed_players: List[Player] = []
+    has_killed_village_victim: bool = False
+
+    def __init__(self, day_actions: DayActions):
+        self.village_victim = day_actions.village_victim
+    
+    def set_killed_players(self, killed_players: List[Player]):
+        self.killed_players = killed_players
+    
+    def set_has_killed_village_victim(self, has_killed: bool):
+        self.has_killed_village_victim = has_killed
+
+    def __repr__(self):
+        return json.dumps(self.__dict__)
+
 class Game(object):
     def __init__(self, players: List[Player]):
         self.players: List[Player] = players
@@ -155,8 +174,11 @@ class Game(object):
         self.werewolf_votes: Dict[Player, Vote] = {}
         self.werewolf_votes_history: List[Dict[Player, Vote]] = []
         self.night_results_history: List[NightResults] = []
+        self.day_results_history: List[DayResults] = []
         self.witch_kill_potion_used = False
         self.witch_save_potion_used = False
+        self.village_votes: Dict[Player, Vote] = {}
+        self.village_votes_history: List[Dict[Player, Vote]] = []
         
     def start(self):
         self.day = 1
@@ -170,11 +192,12 @@ class Game(object):
         self.end_time = datetime.now()
         logger.info(f'Game ends at {self.end_time}')
         
-    def new_day(self):
+    def new_day(self) -> DayActions:
         self.day += 1
         logger.info(f"\nDay: {self.day}. {len(self.players_alive)} players alive: {self.players_alive} \n")
+        return DayActions()
         
-    def new_night(self):
+    def new_night(self) -> NightActions:
         self.night += 1
         logger.info(f"\nNight: {self.night}. {len(self.players_alive)} players alive: {self.players_alive} \n")
         return NightActions()
@@ -226,11 +249,11 @@ class Game(object):
         return self.werewolf_votes
 
     def add_werewolf_vote(self, werewolf_player: Player, victim_player: Player):
-        if not (werewolf_player in self.players_alive and isinstance(werewolf_player.role, Werewolf)):
+        if not (werewolf_player.is_alive and isinstance(werewolf_player.role, Werewolf)):
             logger.info(f'{werewolf_player} is not a werewolf or is dead')
             return False
 
-        if not (victim_player in self.players_alive):
+        if not (victim_player.is_alive):
             logger.info(f'{victim_player} is dead')
             return False
         
@@ -243,7 +266,7 @@ class Game(object):
         return self.werewolf_votes
     
     def remove_werevolves_vote(self, werewolf_player: Player, victim_player: Player):
-        if not (werewolf_player in self.players_alive and isinstance(werewolf_player.role, Werewolf)):
+        if not (werewolf_player.is_alive and isinstance(werewolf_player.role, Werewolf)):
             logger.info(f'{werewolf_player} is not a werewolf or is dead')
             return False
         
@@ -305,7 +328,7 @@ class Game(object):
     def is_witch_save_potion_used(self) -> bool:
         return self.witch_save_potion_used
     
-    def process_and_end_night(self, night_actions: NightActions):
+    def process_night_actions(self, night_actions: NightActions):
         logger.info("")
         # process night results
         # identify who needs to be killed, if seer results should be announced, etc 
@@ -369,3 +392,83 @@ class Game(object):
                     logger.info('Seer did not find a werewolf last night')
             else:
                 logger.info("Seer results won't be announced")
+  
+    def start_new_village_vote(self):
+        self.village_votes = {}
+        return self.village_votes
+    
+    def end_village_vote(self):
+        self.village_votes_history.append(self.village_votes)
+        return self.village_votes
+    
+    def add_village_vote(self, voting_player: Player, victim_player: Player):
+        if not (voting_player.is_alive):
+            logger.info(f'{voting_player} is dead and cannot vote')
+            return False
+
+        if not (victim_player.is_alive):
+            logger.info(f'{victim_player} is dead and cannot be voted')
+            return False
+        
+        logger.info(f'{voting_player} votes to kill {victim_player}')
+        if victim_player in self.village_votes:
+            self.village_votes[victim_player].votes += 1
+        else:
+            self.village_votes[victim_player] = Vote(victim_player, 1)
+
+        return self.village_votes
+    
+    def remove_village_vote(self, voting_player: Player, victim_player: Player):
+        if not voting_player.is_alive:
+            logger.info(f'{voting_player} is dead and cannot vote')
+            return False
+        
+        # remove vote
+        if victim_player in self.village_votes:
+            logger.info(f'{voting_player} has removed vote for {victim_player}')
+            self.village_votes[victim_player].votes -= 1
+            if self.village_votes[victim_player].votes <= 0:
+                del self.village_votes[victim_player]
+        else:
+            logger.info(f'{voting_player} has not voted for {victim_player}')
+
+        return self.village_votes    
+    
+    def get_highest_village_votes(self)-> List[Vote]:
+        if len(self.village_votes) == 0:
+            return []
+        
+        highest_vote = max([vote.votes for vote in self.village_votes.values()])
+        return [vote for player, vote in self.village_votes.items() if vote.votes == highest_vote]
+    
+    def process_day_actions(self, day_actions: DayActions):
+        logger.info("")
+        # process day results
+        # identify who needs to be killed, if hunter, who do they take with them etc
+        day_results = DayResults(day_actions)
+        killed_players = []
+        village_victim: Optional[Player] = day_actions.village_victim
+        
+        if village_victim:
+            self.kill_player(village_victim, 'Village victim')
+            killed_players.append(village_victim)
+            day_results.set_has_killed_village_victim(True)
+
+        day_results.set_killed_players(killed_players)
+        self.day_results_history.append(day_results)
+        return self.day_results_history
+
+    def announce_todays_results(self):
+        if len(self.day_results_history) == 0:
+            logger.info('No results to announce today')
+            return None
+        last_day_results = self.day_results_history[-1]
+        logger.info("Today's results:")
+
+        # announce players who died
+        killed_players = last_day_results.killed_players
+        if len(killed_players) == 0:
+            logger.info('No one died today')
+        else:
+            for player in killed_players:
+                logger.info(f'{player} died')

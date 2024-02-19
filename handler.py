@@ -2,7 +2,7 @@ import json
 import random
 from logs.logger import logger
 from typing import List, Optional
-from providers.objects import Game, NightActions, Player, Vote, Werewolf, Villager, Seer, Bodyguard, Witch
+from providers.objects import Game, NightActions, DayActions, Player, Vote, Werewolf, Villager, Seer, Bodyguard, Witch
 
 game: Optional[Game] = None
 
@@ -16,16 +16,14 @@ def play(event, context):
         _play_round(game)
 
     game.end()
-    return respond(game)
+    return _respond(game)
 
 def _play_round(game: Game):
     night_actions: NightActions = game.new_night()
     # night moves
     # 1 -  werewolves kill a player
+    logger.info("\nWerewolves vote to kill a player")
     night_actions.werewolf_victim = _collect_werewolf_votes().player
-    # we cant kill the player if they're saved by the bodyguard or witch
-    # game.kill_player(werewolf_victim, "Killed by Werewolves")
-
     # 2 - bodyguard saves a player
     night_actions.bodyguard_saved_player = _let_bodyguard_save()
     # 3 - seer investigates a player
@@ -35,18 +33,22 @@ def _play_round(game: Game):
     # 5 - witch kills a player
     night_actions.witch_victim = _let_witch_kill()
 
-    game.process_and_end_night(night_actions)
+    game.process_night_actions(night_actions)
 
-    game.new_day()
+    day_actions: DayActions = game.new_day()
     game.announce_last_night_results()
-    if game.is_game_over():
-        return
+    # if game.is_game_over():
+    #     return
     
     # day moves
-    logger.info("Day moves to be implemented")
+    # 1 - the village votes to kill a player
+    logger.info("\nVillagers discuss and vote to kill a player")
+    day_actions.village_victim = _collect_village_votes().player
+    game.process_day_actions(day_actions)
+    game.announce_todays_results()
 
 
-def respond(game):
+def _respond(game):
     body = {
             "winners": [winner.toJson() for winner in game.winners],
         }
@@ -188,3 +190,35 @@ def _let_witch_kill() -> Optional[Player]:
     else:
         logger.info("Witch chose not to kill a player tonight.")
         return None
+
+def _collect_village_votes()->Vote:
+    # todo, when there is a tie, villagers need to vote again but only the ones who tied
+
+    global game
+    if game is None:
+        raise ValueError("Game has not started yet.")
+
+    game.start_new_village_vote()
+
+    players_alive: List[Player] = game.get_players_alive()
+    villagers: List[Player] = game.get_villagers()
+
+    for player in players_alive:
+        if game.is_werewolf(player):
+            victim = random.choice(villagers)
+        else:
+            victim = random.choice(players_alive)
+        game.add_village_vote(player, victim)
+
+    logger.info(f"Current Votes {[vote for player, vote in game.village_votes.items()]}")
+    highest_votes = game.get_highest_village_votes()
+    if len(highest_votes) > 1:
+        logger.info("There is a tie")
+        logger.info("Everyone need to vote again")
+        return _collect_village_votes()
+    else:
+        # get the player with the highest votes
+        highest_vote = highest_votes[0]
+        logger.info(f"The Village has voted to kill {highest_vote.player}")
+        game.end_village_vote()
+        return highest_vote
