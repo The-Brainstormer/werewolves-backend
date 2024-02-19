@@ -13,7 +13,9 @@ def play(event, context):
     game = Game(players)
     game.start()
     while not game.is_game_over():
-        _play_round(game)
+        should_continue = _play_round(game)
+        if not should_continue:
+            break
 
     game.end()
     return _respond(game)
@@ -37,8 +39,8 @@ def _play_round(game: Game):
 
     day_actions: DayActions = game.new_day()
     game.announce_last_night_results()
-    # if game.is_game_over():
-    #     return
+    if game.is_game_over():
+        return False
     
     # day moves
     # 1 - the village votes to kill a player
@@ -46,6 +48,7 @@ def _play_round(game: Game):
     day_actions.village_victim = _collect_village_votes().player
     game.process_day_actions(day_actions)
     game.announce_todays_results()
+    return True
 
 
 def _respond(game):

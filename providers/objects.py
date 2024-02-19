@@ -185,7 +185,7 @@ class Game(object):
         self.night = 0
         self.start_time = datetime.now()
 
-        logger.info(f'Game starts at {self.start_time}')
+        logger.info(f'\n\nGame starts at {self.start_time}')
         logger.info(f"Day: {self.day}. {len(self.players)} players introduced  \n")
         
     def end(self):
