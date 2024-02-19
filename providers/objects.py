@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 from logs.logger import logger
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional
 from enum import Enum
 
 class RoleAction(Enum):
@@ -15,7 +15,6 @@ class RoleAction(Enum):
     def __str__(self):
         return f'{self.value}'
 
-
 class PlayerAction(object):
     def __init__(self, action: RoleAction, target):
         self.action = action
@@ -24,7 +23,6 @@ class PlayerAction(object):
     def __repr__(self):
         return f"{self.action} {self.target}"
 
-    
 class Role(object):
     def __init__(self, name: str, description: str, balance_points: int = 0):
         self.name = name
@@ -41,7 +39,6 @@ class Player(object):
         self.name: str = name
         self.role: Role = role
         self.is_alive = True
-        self.allowed_actions: List[RoleAction] = role.possible_actions
         self.actions_taken: List[PlayerAction] = []
     
     def __repr__(self):
@@ -52,17 +49,6 @@ class Player(object):
     
     def __hash__(self) -> int:
         return hash(self.id)
-
-    def take_action(self, player_action: PlayerAction):
-        logger.info(f'{self.name} ({self.role}) moves to {player_action}')
-        can_take_action = player_action.action in self.allowed_actions
-
-        if can_take_action:
-            self.actions_taken.append(player_action)
-        else:
-            logger.info(f'{self.name} ({self.role}) cannot take action {player_action}')
-        
-        return can_take_action
     
     def __str__(self) -> str:
         return f'{self.name} ({self.role})'
