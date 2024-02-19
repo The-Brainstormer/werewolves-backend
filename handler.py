@@ -1,7 +1,6 @@
 import json
-from math import e
 import random
-from typing import Dict, List, Optional
+from typing import List, Optional
 from providers.objects import Game, NightResult, Player, Vote, Werewolf, Villager, Seer, Bodyguard, Witch
 
 game: Optional[Game] = None
