@@ -8,7 +8,6 @@ game: Optional[Game] = None
 def start(event, context):
     global game 
 
-
     players = _init_players()
     game = Game(players)
     game.start()
@@ -54,9 +53,9 @@ def _init_players()->List[Player]:
     player_6 = Player(6, 'Mary', Villager())
     player_7 = Player(7, 'Harry', Villager())
     player_8 = Player(8, 'Larry', Villager())
-    player_9 = Player(9, 'Carry', Villager())
-    player_10 = Player(9, 'Andy', Bodyguard())
-    player_11 = Player(10, 'Vikky', Witch())
+    player_9 = Player(9, 'Henry', Villager())
+    player_10 = Player(10, 'Andy', Bodyguard())
+    player_11 = Player(11, 'Vikky', Witch())
 
     players = [player_1, player_2, player_3, player_4, player_5, player_6, player_7, player_8, player_9, player_10, player_11]
     return players
