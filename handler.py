@@ -30,9 +30,9 @@ def play(event, context):
 
     game.process_and_end_night(night_result)
 
-    # game.next_day()
+    game.new_day()
     
-
+    print("\n")
     game.end()
     body = {
         "winners": game.winners,
@@ -105,13 +105,8 @@ def _let_seer_investigate() -> bool:
     investigated_player = random.choice(players)
     print("Seer investigates", investigated_player)
     is_werewolf = game.is_werewolf(investigated_player)
-    if is_werewolf:
-        print(f"{investigated_player} is a werewolf")
-        return True
-    else:
-        print(f"{investigated_player} is not a werewolf")
-        return False
-    
+    return is_werewolf
+       
 def _let_bodyguard_save() -> Optional[Player]:
     print("\n")
 

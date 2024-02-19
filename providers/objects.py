@@ -131,7 +131,7 @@ class Game(object):
         self.start_time = datetime.now()
 
         print(f'Game starts at {self.start_time}')
-        print(f"Day: {self.day}. Players introduced: {len(self.players)} \n")
+        print(f"Day: {self.day}. {len(self.players)} players introduced  \n")
         
     def end(self):
         if self.is_over():
@@ -140,13 +140,13 @@ class Game(object):
             print('Game ends. No winner')
         self.end_time = datetime.now()
         
-    def next_day(self):
+    def new_day(self):
         self.day += 1
-        print(f"\nDay: {self.day}. Players alive: {self.players_alive} \n")
+        print(f"\nDay: {self.day}. {len(self.players_alive)} players alive: {self.players_alive} \n")
         
     def new_night(self):
         self.night += 1
-        print(f"\nNight: {self.night}. Players alive: {self.players_alive} \n")
+        print(f"\nNight: {self.night}. {len(self.players_alive)} players alive: {self.players_alive} \n")
         return NightResult()
     
     def get_villagers(self) -> List[Player]:
@@ -278,13 +278,13 @@ class Game(object):
         return self.witch_save_potion_used
     
     def process_and_end_night(self, night_result: NightResult):
+        print("\n")
         # process night results
         # identify who needs to be killed, if seer results should be announced, etc 
         # then append result to history
         werewolf_victim: Optional[Player] = night_result.werewolf_victim
         witch_killed_player: Optional[Player] = night_result.witch_killed_player
         did_witch_save_werewolf_victim = night_result.did_witch_save_werewolf_victim
-        did_seer_find_werewolf: bool = night_result.did_seer_find_werewolf
         bodyguard_saved_player: Optional[Player] = night_result.bodyguard_saved_player
 
         should_kill_werewolf_victim = True
