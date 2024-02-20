@@ -272,10 +272,12 @@ class Game(object):
             return []
         
         highest_vote = max([vote.votes for vote in self.werewolf_votes.values()])
-        return [vote for player, vote in self.werewolf_votes.items() if vote.votes == highest_vote]
+        return [vote for vote in self.werewolf_votes.values() if vote.votes == highest_vote]
     
     def get_werewolves_votes(self) -> List[Vote]:
-        return [vote for player, vote in self.werewolf_votes.items()]
+        # first sort the votes in descending order
+        votes = sorted(self.werewolf_votes.values(), key=lambda vote: vote.votes, reverse=True)
+        return votes
     
     def get_werewolves_votes_history(self):
         return self.werewolf_votes_history
@@ -421,14 +423,15 @@ class Game(object):
         return self.village_votes    
     
     def get_village_votes(self) -> List[Vote]:
-        return [vote for player, vote in self.village_votes.items()]
+        votes = sorted(self.village_votes.values(), key=lambda vote: vote.votes, reverse=True)
+        return votes
 
     def get_highest_village_votes(self)-> List[Vote]:
         if len(self.village_votes) == 0:
             return []
         
         highest_vote = max([vote.votes for vote in self.village_votes.values()])
-        return [vote for player, vote in self.village_votes.items() if vote.votes == highest_vote]
+        return [vote for vote in self.village_votes.values() if vote.votes == highest_vote]
     
     def process_day_actions(self, day_actions: DayActions):
         logger.info("")
