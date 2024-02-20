@@ -198,8 +198,6 @@ def _let_witch_kill() -> Optional[Player]:
         return None
 
 def _collect_village_votes(_suspected_players: List[Player] = [])->Vote:
-    # todo, when there is a tie, villagers need to vote again but only the ones who tied
-
     global game
     if game is None:
         raise ValueError("Game has not started yet.")
