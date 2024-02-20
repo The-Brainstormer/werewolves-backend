@@ -243,7 +243,7 @@ class Game(object):
             logger.info(f'{victim_player} is dead')
             return False
         
-        logger.info(f'{werewolf_player} votes to kill {victim_player}')
+        # logger.info(f'{werewolf_player} votes to kill {victim_player}')
         if victim_player in self.werewolf_votes:
             self.werewolf_votes[victim_player].votes += 1
         else:
@@ -396,7 +396,7 @@ class Game(object):
             logger.info(f'{victim_player} is dead and cannot be voted')
             return False
         
-        logger.info(f'{voting_player} votes to kill {victim_player}')
+        # logger.info(f'{voting_player} votes to kill {victim_player}')
         if victim_player in self.village_votes:
             self.village_votes[victim_player].votes += 1
         else:
