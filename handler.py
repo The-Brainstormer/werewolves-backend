@@ -92,7 +92,7 @@ def _collect_werewolf_votes(_villagers: List[Player] = [])->Vote:
         victim = random.choice(villagers)
         game.add_werewolf_vote(werewolf_player=werewolf, victim_player=victim)
 
-    logger.info(f"Current Votes {[vote for player, vote in game.werewolf_votes.items()]}")
+    logger.info(f"Current Votes {game.get_werewolves_votes()}")
     highest_votes = game.get_highest_werewolves_votes()
     if len(highest_votes) > 1:
         logger.info("There is a tie")
@@ -221,11 +221,11 @@ def _collect_village_votes(_suspected_players: List[Player] = [])->Vote:
             victim = random.choice(suspected_players)
         game.add_village_vote(player, victim)
 
-    logger.info(f"Current Votes {[vote for player, vote in game.village_votes.items()]}")
+    logger.info(f"Current Votes {game.get_village_votes()}")
     highest_votes = game.get_highest_village_votes()
     if len(highest_votes) > 1:
         logger.info("There is a tie")
-        logger.info("Everyone need to vote again")
+        logger.info("Everyone needs to vote again")
         tied_players = [vote.player for vote in highest_votes]
         return _collect_village_votes(tied_players)
     else:

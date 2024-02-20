@@ -274,8 +274,8 @@ class Game(object):
         highest_vote = max([vote.votes for vote in self.werewolf_votes.values()])
         return [vote for player, vote in self.werewolf_votes.items() if vote.votes == highest_vote]
     
-    def get_werewolves_votes(self):
-        return self.werewolf_votes
+    def get_werewolves_votes(self) -> List[Vote]:
+        return [vote for player, vote in self.werewolf_votes.items()]
     
     def get_werewolves_votes_history(self):
         return self.werewolf_votes_history
@@ -420,6 +420,9 @@ class Game(object):
 
         return self.village_votes    
     
+    def get_village_votes(self) -> List[Vote]:
+        return [vote for player, vote in self.village_votes.items()]
+
     def get_highest_village_votes(self)-> List[Vote]:
         if len(self.village_votes) == 0:
             return []
