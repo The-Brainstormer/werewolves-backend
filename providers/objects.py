@@ -210,18 +210,20 @@ class Game(object):
         return isinstance(player.role, Werewolf)
 
     def is_game_over(self):
-        # get players that are instances of Werewolf
         werewolves = self.get_werewolves()
-        villagers = self.get_villagers()  
+        villagers = self.get_villagers()
+        werewolves_count = len(werewolves)
+        villagers_count = len(villagers)  
+
         
-        if len(werewolves) == 0:
+        if werewolves_count == 0:
             self.winners = villagers
             logger.info('Villagers win. All werewolves are dead.')
             return True
         
-        if len(werewolves) >= len(villagers):
+        if werewolves_count > villagers_count:
             self.winners = werewolves
-            logger.info('Werewolves win. They outnumber the villagers.')
+            logger.info(f"Werewolves win. They outnumber the villagers {werewolves_count} to {villagers_count}")
             return True
         
         return False
